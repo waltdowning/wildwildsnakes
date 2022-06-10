@@ -26,11 +26,17 @@ pygame.display.set_caption("Wild Wild Snakes!")
  
 SCREEN_WIDTH = 400
 SCREEN_HEIGHT = 400
+
+# Initialize variables for scores.
 score = 0
 bad_score = 0
+
+# Initialize a list to hold tuples representing the (x,y) coordinates of apples for the purpose of NPC movement logic.
 apple_map = [(0,0),(0,0),(0,0)]
 
 class Snake(pygame.sprite.Sprite):
+    """ The player's character, controlled by keypad. Keeps moving unless it hits the edge of the screen
+    or spacebar is pressed. """
     def __init__(self):
         pygame.sprite.Sprite.__init__(self)
         self.image = pygame.image.load("img/snake_up.png")
@@ -76,6 +82,8 @@ class Snake(pygame.sprite.Sprite):
         surface.blit(self.image, self.rect)
 
 class BadSnake(pygame.sprite.Sprite):
+    """ An NPC snake with a target integer from 0 to 2 representing the apple it wants. Moves left/right then
+    up/down until it reaches the apple. """
     def __init__(self, target):
         pygame.sprite.Sprite.__init__(self)
         self.image = pygame.image.load("img/badsnake_up.png")
@@ -102,6 +110,7 @@ class BadSnake(pygame.sprite.Sprite):
         surface.blit(self.image, self.rect)
 
 class Apple(pygame.sprite.Sprite):
+    """ An apple at given (x, y) coordinates. """
     def __init__(self, x, y):
         pygame.sprite.Sprite.__init__(self)
         self.image = pygame.image.load("img/apple.png")
@@ -112,6 +121,7 @@ class Apple(pygame.sprite.Sprite):
         surface.blit(self.image, self.rect)
 
 class Score:
+    """ The player's score, which will draw itself in white in the upper right. """
     def __init__(self):
         self.current_score = 0
 
@@ -128,6 +138,7 @@ class Score:
         font.render_to(surface, text_rect, score_string, WHITE, size = 20)
 
 class BadScore:
+    """ The collective NPC score, which will draw itself in purple in the upper left. """
     def __init__(self):
         self.current_score = 0
 
@@ -145,6 +156,7 @@ class BadScore:
 
 font = pygame.freetype.SysFont("Courier", 0)
 
+# Initialize snakes and apples and scores.
 S1 = Snake()
 B1 = BadSnake(0)
 B2 = BadSnake(1)
@@ -152,15 +164,17 @@ B3 = BadSnake(2)
 A1 = Apple(randint(10,390), randint(10,390))
 A2 = Apple(randint(10,390), randint(10,390))
 A3 = Apple(randint(10,390), randint(10,390))
+
+gameScore = Score()
+enemyScore = BadScore()
+
+# Add sprites to groups (only currently using bad_snakes group, but leaving the rest in for the future)
 apples = pygame.sprite.Group()
 apples.add(A1, A2, A3)
 bad_snakes = pygame.sprite.Group()
 bad_snakes.add(B1, B2, B3)
 all_sprites = pygame.sprite.Group()
 all_sprites.add(A1, A2, A3, S1, B1, B2, B3)
-
-gameScore = Score()
-enemyScore = BadScore()
 
 # Game loop
 while True:
@@ -169,23 +183,32 @@ while True:
             pygame.quit()
             sys.exit()
     
-   
+    # Update all snakes.
     S1.update()
     B1.update()
     B2.update()
     B3.update()
+   
+    # Clear the screen.
     DISPLAYSURF.fill(BLACK)
+    
+    # Draw the apples and update the map of locations.
     A1.draw(DISPLAYSURF)
     A2.draw(DISPLAYSURF)
     A3.draw(DISPLAYSURF)
     apple_map = [A1.rect.center, A2.rect.center, A3.rect.center]
+    
+    # Draw the NPC snakes.
     B1.draw(DISPLAYSURF)
     B2.draw(DISPLAYSURF)
     B3.draw(DISPLAYSURF)
     S1.draw(DISPLAYSURF)
+
+    # Draw the scores.
     gameScore.draw(DISPLAYSURF, gameScore.currentScoreToString())
     enemyScore.draw(DISPLAYSURF, enemyScore.currentScoreToString())
    
+   # Check for the player reaching an apple. If so, repop the apple and update score.
     if pygame.sprite.collide_rect(S1, A1):
         A1 = Apple(randint(10,390), randint(10,390))
         gameScore.current_score += 1
@@ -196,6 +219,8 @@ while True:
         A3 = Apple(randint(10,390), randint(10,390))
         gameScore.current_score += 1
     
+    # Check for each NPC snake reaching an apple. If so, repop the apple and update score.
+    # Note the NPC snake can eat any apple, not just the one it is targeting.
     for bad_snake in bad_snakes:
         if pygame.sprite.collide_rect(bad_snake, A1):
             A1 = Apple(randint(10,390), randint(10,390))
